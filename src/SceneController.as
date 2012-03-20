@@ -1,5 +1,6 @@
 package {
 	import flash.display.Sprite;
+	import game.GameModeID;
 
 	import game.Events.SceneEvent;
 	import game.Scenes.GameScene;
@@ -23,6 +24,8 @@ package {
 		}
 		private function onWantRemoveMenu(event:SceneEvent):void {
 			_menuScene.remove();
+			if (_menuScene.gameMode == GameModeID.RUN_GAME) { _gameScene.gameMode = GameModeID.RUN_GAME; }
+			else if (_menuScene.gameMode == GameModeID.SHOOT_GAME) { _gameScene.gameMode = GameModeID.SHOOT_GAME; }
 			_gameScene.open();
 		}
 		private function onWantRemoveGame(event:SceneEvent):void {

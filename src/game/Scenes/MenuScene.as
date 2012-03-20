@@ -1,10 +1,12 @@
 package game.Scenes {
+	import flash.display.MovieClip;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.events.EventDispatcher;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextField;
 	import flash.display.Sprite;
+	import game.GameModeID;
 	import game.MapObjects.Enemy;
 	
 	import game.Events.SceneEvent;
@@ -13,23 +15,25 @@ package game.Scenes {
 	public class MenuScene extends EventDispatcher implements IScene {
 		private var _container:Sprite;
 		private var _menu:Sprite;
-		private var _stars:Vector.<StarView>;
+		private var _stars:Vector.<StarView2>;
 		private var _asters:Vector.<Enemy>;
 		
-		private var _playBtn:Sprite;
-		private var _playBtnTxt:TextField;
+		private var _playBtnRun:MovieClip;
+		private var _playBtnShoot:MovieClip;
+		private var _gameMode:int;
 		
 		public function MenuScene(container:Sprite) {
 			_container = container;
-			_menu = new BckgMenuView as Sprite;
+			_menu = new /*BckgMenuView as*/ Sprite;
 			
-			createPlayBtn();
 		}
 		public function open():void {
 			createStars();
 			createAsteroids();
+			createPlayBtns();
 			_container.addChild(_menu);
-			_container.addChild(_playBtn);
+			_container.addChild(_playBtnRun);
+			_container.addChild(_playBtnShoot);
 			_menu.addEventListener(Event.ENTER_FRAME, moveAsteroids);
 		}
 		
@@ -37,26 +41,29 @@ package game.Scenes {
 			_container.removeChild(_menu);
 			removeStars();
 			removeAsteroids();
-			_container.removeChild(_playBtn);
+			_container.removeChild(_playBtnRun);
+			_container.removeChild(_playBtnShoot);
 			_menu.removeEventListener(Event.ENTER_FRAME, moveAsteroids);
 		}
+		public function get gameMode():int { return _gameMode; }
 		//
 		private function createStars():void {
-			_stars = new Vector.<StarView>;
+			_stars = new Vector.<StarView2>;
 			var len:int = Math.random() * 20 + 60;
 			for (var i:int = 0; i < len; i++) {
-				var star:StarView = new StarView;
-				star.x = Math.random() * _menu.width;
-				star.y = Math.random() * _menu.height;
-				star.scaleX = star.scaleY = Math.random() * 1.2 + .4;
+				var star:StarView2 = new StarView2;
+				star.x = Math.random() * 600;
+				star.y = Math.random() * 600;
+				star.scaleX = star.scaleY = Math.random() * 1;
 				_menu.addChild(star);
 				_stars.push(star);
 			}
+			_menu.cacheAsBitmap = true;
 		}
 		//
 		private function removeStars():void
 		{
-			for each (var star:StarView in _stars) {
+			for each (var star:StarView2 in _stars) {
 				if (_menu.contains(star)) { _menu.removeChild(star); }
 			}
 			_stars.length = 0;
@@ -93,44 +100,62 @@ package game.Scenes {
 			}
 		}
 		//
-		private function createPlayBtn():void {
-			_playBtn = new PlayBtnRunMode as Sprite;
-			//_playBtn.graphics.beginFill(0x91e600);
-			//_playBtn.graphics.drawRect(-40, -20, 80, 40);
-			//_playBtn.graphics.endFill();
-			_playBtn.x = 200;
-			_playBtn.y = 450;
-			/*_playBtnTxt = new TextField();
-			_playBtnTxt.x = -12;
-			_playBtnTxt.y = -10;
-			_playBtnTxt.text = "play";
-			_playBtnTxt.selectable = false;
-			_playBtnTxt.autoSize = TextFieldAutoSize.LEFT;
-			_playBtnTxt.mouseEnabled = false;
-			_playBtn.addChild(_playBtnTxt);*/
-			_playBtn.addEventListener(MouseEvent.MOUSE_OVER, onPlayBtnMouseOver);
-			_playBtn.addEventListener(MouseEvent.MOUSE_OUT, onPlayBtnMouseOut);
-			_playBtn.addEventListener(MouseEvent.CLICK, onPlayBtnClick);
+		private function createPlayBtns():void {
+			_playBtnRun = new PlayBtnRunMode as MovieClip;
+			_playBtnRun.gotoAndStop(1);
+			_playBtnRun.buttonMode = true;
+			_playBtnRun.x = 150;
+			_playBtnRun.y = 450;
+			_playBtnRun.addEventListener(MouseEvent.MOUSE_OVER, onPlayBtnMouseOver);
+			_playBtnRun.addEventListener(MouseEvent.MOUSE_OUT, onPlayBtnMouseOut);
+			_playBtnRun.addEventListener(MouseEvent.CLICK, onPlayBtnRunClick);
+			
+			_playBtnShoot = new PlayBtnShootMode as MovieClip;
+			_playBtnShoot.gotoAndStop(1);
+			_playBtnShoot.buttonMode = true;
+			_playBtnShoot.x = 450;
+			_playBtnShoot.y = 450;
+			_playBtnShoot.addEventListener(MouseEvent.MOUSE_OVER, onPlayBtnMouseOver);
+			_playBtnShoot.addEventListener(MouseEvent.MOUSE_OUT, onPlayBtnMouseOut);
+			_playBtnShoot.addEventListener(MouseEvent.CLICK, onPlayBtnShootClick);
 		}
 		//
 		private function onPlayBtnMouseOver(event:MouseEvent):void {
-			TweenMax.to(_menu, .4, {blurFilter:{blurX:10, blurY:10,quality:2}});
+			TweenMax.to(_menu, .4, { blurFilter: { blurX:10, blurY:10, quality:2 }} );
+			var button:Sprite = event.currentTarget as Sprite;
+			if (button == _playBtnRun) { button = _playBtnShoot; _playBtnRun.gotoAndStop(2); }
+			else { button = _playBtnRun; _playBtnShoot.gotoAndStop(2); }
+			TweenMax.to(button, .4, { blurFilter: { blurX:10, blurY:10, quality:2 }} );
 		}
 		//
 		private function onPlayBtnMouseOut(event:MouseEvent):void {
-			TweenMax.to(_menu, .4, {blurFilter:{blurX:00, blurY:00}});
+			TweenMax.to(_menu, .4, { blurFilter: { blurX:00, blurY:00 }} );
+			var button:Sprite = event.currentTarget as Sprite;
+			if (button == _playBtnRun) { button = _playBtnShoot; _playBtnRun.gotoAndStop(1); }
+			else { button = _playBtnRun; _playBtnShoot.gotoAndStop(1); }
+			TweenMax.to(button, .4, { blurFilter: { blurX:00, blurY:00 }} );
 		}
 		//
-		private function onPlayBtnClick(event:MouseEvent):void {
+		private function onPlayBtnRunClick(event:MouseEvent):void {
 			event.stopPropagation();
-			_playBtn.removeEventListener(MouseEvent.MOUSE_OVER, onPlayBtnMouseOver);
-			_playBtn.removeEventListener(MouseEvent.MOUSE_OUT, onPlayBtnMouseOut);
-			_playBtn.removeEventListener(MouseEvent.CLICK, onPlayBtnClick);
+			_playBtnRun.removeEventListener(MouseEvent.MOUSE_OVER, onPlayBtnMouseOver);
+			_playBtnRun.removeEventListener(MouseEvent.MOUSE_OUT, onPlayBtnMouseOut);
+			_playBtnRun.removeEventListener(MouseEvent.CLICK, onPlayBtnRunClick);
+			_gameMode = GameModeID.RUN_GAME;
+			switchScene();
+		}
+		//
+		private function onPlayBtnShootClick(event:MouseEvent):void {
+			event.stopPropagation();
+			_playBtnShoot.removeEventListener(MouseEvent.MOUSE_OVER, onPlayBtnMouseOver);
+			_playBtnShoot.removeEventListener(MouseEvent.MOUSE_OUT, onPlayBtnMouseOut);
+			_playBtnShoot.removeEventListener(MouseEvent.CLICK, onPlayBtnShootClick);
+			_gameMode = GameModeID.SHOOT_GAME;
 			switchScene();
 		}
 		//
 		private function switchScene():void {
-			_playBtn.removeEventListener(MouseEvent.CLICK, onPlayBtnClick);
+			TweenMax.to(_menu, .1, { blurFilter: { blurX:0, blurY:0, quality:2 }} );
 			dispatchEvent(new SceneEvent(SceneEvent.WANT_REMOVE));
 		}
 	}
